@@ -1,0 +1,13 @@
+/* CASE 3 TRANSACTION DATA:
+   - Lists multiple recurring payments (Netflix, Spotify, iCloud).
+   - Combined subscription total is $151.00. 
+   - Total spending (including Food) is $351.00.
+   - Subscription ratio = ~43%, which drastically exceeds the 5% limit.
+   - Tests the system's 'Percentage' rule logic.
+*/
+[
+    {"date": "2026-04-01", "amount": 78.0, "category": "Subscription", "description": "Netflix Monthly"},
+    {"date": "2026-04-05", "amount": 58.0, "category": "Subscription", "description": "Spotify Family"},
+    {"date": "2026-04-10", "amount": 15.0, "category": "Subscription", "description": "iCloud 50GB Storage"},
+    {"date": "2026-04-15", "amount": 200.0, "category": "Food", "description": "Grocery Shopping"}
+]

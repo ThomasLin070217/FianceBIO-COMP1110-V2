@@ -1,0 +1,15 @@
+/* CASE 1 BUDGET RULE:
+   - Category: Food
+   - Threshold: HKD 50.00
+   - Rule Type: Cap (Fixed Limit)
+   - Goal: Enforce a strict daily spending limit for campus meals.
+*/
+[
+    {
+        "category": "Food",
+        "threshold": 50.0,
+        "period": "daily",
+        "rule_type": "cap",
+        "enabled": true
+    }
+]

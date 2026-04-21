@@ -1,0 +1,21 @@
+/* CASE 2 BUDGET RULE:
+   - Category: Transport
+   - Threshold: 0.35 of monthly spending
+   - Goal: detect transport-heavy spending month.
+*/
+[
+    {
+        "category": "Transport",
+        "threshold": 0.35,
+        "period": "monthly",
+        "rule_type": "percentage",
+        "enabled": true
+    },
+    {
+        "category": "Food",
+        "threshold": 0.30,
+        "period": "monthly",
+        "rule_type": "percentage",
+        "enabled": true
+    }
+]

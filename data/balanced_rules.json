@@ -1,0 +1,8 @@
+[
+    {"category": "Food", "threshold": 0.20, "period": "monthly", "rule_type": "percentage", "enabled": true},
+    {"category": "Transport", "threshold": 0.12, "period": "monthly", "rule_type": "percentage", "enabled": true},
+    {"category": "Digital", "threshold": 0.10, "period": "monthly", "rule_type": "percentage", "enabled": true},
+    {"category": "Social", "threshold": 0.15, "period": "monthly", "rule_type": "percentage", "enabled": true},
+    {"category": "Housing", "threshold": 0.30, "period": "monthly", "rule_type": "percentage", "enabled": true},
+    {"category": "Other", "threshold": 0.08, "period": "monthly", "rule_type": "percentage", "enabled": true}
+]

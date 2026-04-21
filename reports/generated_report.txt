@@ -1,0 +1,14 @@
+FinanceBIO Report
+Generated at: 2026-04-21 23:41:32
+Transactions: 7
+Total Spending: HKD 100,531.00
+Health Score: 85/100
+Alert Count: 1
+
+Top Categories:
+- Social: HKD 100,000.00
+- Dining: HKD 431.00
+- Transport: HKD 100.00
+
+Suggestion:
+- Good control. Keep current habits and automate weekly tracking.

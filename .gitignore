@@ -1,0 +1,26 @@
+# --- Python Specific ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Environment & OS ---
+# Virtual environments (if used)
+venv/
+.venv/
+env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# --- Data & Logs ---
+# Exclude your personal/local runtime data to keep the repo clean
+# (Note: Keep the /data/case*.json files, but ignore temporary runtime files)
+data/transactions.json
+data/budget_rules.json
+*.log
+
+# --- IDEs ---
+.vscode/
+.idea/

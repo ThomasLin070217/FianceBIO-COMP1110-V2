@@ -1,0 +1,11 @@
+/* CASE 1 TRANSACTION DATA:
+   - April 20: Spent $45.00 (Success: Within budget).
+   - April 21: Spent $65.50 (Failure: Triggers Alert).
+   - April 22: Spent $48.00 (Success: Near limit).
+   - This data tests the system's ability to identify specific overspending events[cite: 118, 123].
+*/
+[
+    {"date": "2026-04-20", "amount": 45.0, "category": "Food", "description": "CYM Mixian"},
+    {"date": "2026-04-21", "amount": 65.5, "category": "Food", "description": "CYM Roast Goose Rice"},
+    {"date": "2026-04-22", "amount": 48.0, "category": "Food", "description": "U-Canteen Noodles"}
+]
