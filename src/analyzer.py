@@ -24,14 +24,26 @@ Output Requirements:
 
     @staticmethod
     def get_total_spending(transactions):
-        """Calculate the sum of all transaction amounts."""
-        return sum(t['amount'] for t in transactions)
+        """Calculate total expense amount (exclude income entries)."""
+        return sum(t['amount'] for t in transactions if t.get('category') != "Income")
+
+    @staticmethod
+    def get_total_income(transactions):
+        """Calculate total income amount from Income category."""
+        return sum(t['amount'] for t in transactions if t.get('category') == "Income")
+
+    @staticmethod
+    def get_net_balance(transactions):
+        """Income minus spending to show current net cash flow."""
+        return Analyzer.get_total_income(transactions) - Analyzer.get_total_spending(transactions)
 
     @staticmethod
     def get_category_totals(transactions):
-        """Group spending by category."""
+        """Group expense amounts by category (exclude income)."""
         totals = {}
         for t in transactions:
+            if t.get('category') == "Income":
+                continue
             cat = t['category']
             totals[cat] = totals.get(cat, 0) + t['amount']
         return totals
@@ -46,9 +58,11 @@ Output Requirements:
 
     @staticmethod
     def get_daily_breakdown(transactions):
-        """Group spending by date to help identify spending streaks."""
+        """Group daily expense totals (exclude income)."""
         daily = {}
         for t in transactions:
+            if t.get('category') == "Income":
+                continue
             date = t['date']
             daily[date] = daily.get(date, 0) + t['amount']
         return daily
