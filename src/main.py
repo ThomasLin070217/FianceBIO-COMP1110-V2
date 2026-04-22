@@ -351,8 +351,11 @@ def build_dashboard_lines(transactions, rules):
         return len(ansi_re.sub("", str(text)))
 
     total = Analyzer.get_total_spending(transactions)
+    income = Analyzer.get_total_income(transactions)
+    net_balance = Analyzer.get_net_balance(transactions)
     count = len(transactions)
-    avg = (total / count) if count else 0.0
+    expense_count = sum(1 for t in transactions if t.get("category") != "Income")
+    avg = (total / expense_count) if expense_count else 0.0
     category_totals = Analyzer.get_category_totals(transactions) if transactions else {}
     top_cat = max(category_totals.items(), key=lambda x: x[1])[0] if category_totals else "N/A"
 
@@ -362,11 +365,12 @@ def build_dashboard_lines(transactions, rules):
 
     left_content = [
         f"Total: HKD {total:,.2f}",
+        f"Income: HKD {income:,.2f}",
+        f"Net: HKD {net_balance:,.2f}",
         f"Transactions: {count}",
-        f"Avg/tx: HKD {avg:,.2f}",
+        f"Avg expense/tx: HKD {avg:,.2f}",
         f"Top Category: {top_cat}",
         f"Alerts: {len(alerts)}",
-        "",
         f"Budget Health: {'Stable' if score >= 80 else 'Watch' if score >= 50 else 'Risk'}",
         f"Spend Density: {((count / 30) if count else 0):.1f} tx/week",
     ]
@@ -506,6 +510,8 @@ def build_dashboard_lines(transactions, rules):
 
 def generate_report(transactions, rules):
     total = Analyzer.get_total_spending(transactions)
+    income = Analyzer.get_total_income(transactions)
+    net_balance = Analyzer.get_net_balance(transactions)
     count = len(transactions)
     category_totals = Analyzer.get_category_totals(transactions) if transactions else {}
     top_categories = Analyzer.get_top_categories(transactions, n=3) if transactions else []
@@ -517,6 +523,8 @@ def generate_report(transactions, rules):
         f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         f"Transactions: {count}",
         f"Total Spending: HKD {total:,.2f}",
+        f"Total Income: HKD {income:,.2f}",
+        f"Net Balance: HKD {net_balance:,.2f}",
         f"Health Score: {score}/100",
         f"Alert Count: {len(alerts)}",
         "",
@@ -544,6 +552,9 @@ def generate_report(transactions, rules):
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report_text)
+    print(UI.title("\nGENERATED REPORT"))
+    print(report_text)
+    print(UI.success(f"\nSaved to {report_path}"))
     return report_text, report_path
 
 
@@ -705,10 +716,7 @@ def run():
             FileIO.save_to_json(transactions, DATA_FILE)
 
         elif choice == '6':
-            report_text, report_path = generate_report(transactions, rules)
-            print(UI.title("\nGENERATED REPORT"))
-            print(report_text)
-            print(UI.success(f"\nSaved to {report_path}"))
+            generate_report(transactions, rules)
 
         elif choice == '7':
             tool = select_from_list(

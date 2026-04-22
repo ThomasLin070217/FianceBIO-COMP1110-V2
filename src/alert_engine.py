@@ -11,16 +11,17 @@ class AlertEngine:
     def check_all_alerts(self):
         """Processes all rules and returns a list of specific financial warnings."""
         alerts = []
-        
+        expense_transactions = [t for t in self.transactions if t.get('category') != "Income"]
+
         # Calculate overall total for percentage-based rules
-        total_spent = sum(t['amount'] for t in self.transactions)
-        
+        total_spent = sum(t['amount'] for t in expense_transactions)
+
         if total_spent <= 0:
             return ["INFO: No spending recorded. Budget rules cannot be evaluated."]
 
         # Aggregate current spending per category
         cat_totals = {}
-        for t in self.transactions:
+        for t in expense_transactions:
             cat = t['category']
             cat_totals[cat] = cat_totals.get(cat, 0) + t['amount']
 
@@ -52,7 +53,7 @@ class AlertEngine:
                     )
         
         # Rule 5: Uncategorized check (as per guidelines)
-        other_count = sum(1 for t in self.transactions if t['category'] == "Other")
+        other_count = sum(1 for t in expense_transactions if t['category'] == "Other")
         if other_count > 0:
             alerts.append(f"INFO: You have {other_count} transactions in 'Other'. Consider categorizing them.")
             
