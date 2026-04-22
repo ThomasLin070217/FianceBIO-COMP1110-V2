@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinanceBIO — HKU Student Budget Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ── Glassmorphism ─────────────────────────────────────── */
+    .glass {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .glass-md {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .glass-strong {
+      background: rgba(6,30,20,0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(16,185,129,0.18);
+    }
+
+    /* ── Body gradient ─────────────────────────────────────── */
+    body {
+      background: radial-gradient(ellipse at 20% 0%, #052e16 0%, #0a0f0d 55%, #030712 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    }
+
+    /* ── Subtle grid overlay ───────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ── Nav tabs ──────────────────────────────────────────── */
+    .nav-tab {
+      padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;
+      border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+      color: #6ee7b7; transition: all 0.15s ease;
+    }
+    .nav-tab:hover { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2); }
+    .nav-tab.active {
+      background: rgba(16,185,129,0.18);
+      border-color: rgba(16,185,129,0.45);
+      color: #34d399;
+      box-shadow: 0 0 12px rgba(16,185,129,0.15);
+    }
+
+    /* ── Form inputs ───────────────────────────────────────── */
+    input, select, textarea {
+      background: rgba(6,78,59,0.15) !important;
+      color: #d1fae5;
+      border: 1px solid rgba(16,185,129,0.2) !important;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none !important;
+      border-color: rgba(16,185,129,0.6) !important;
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.12) !important;
+    }
+    input::placeholder, textarea::placeholder { color: rgba(110,231,183,0.3); }
+    select option { background: #0a1f14; color: #d1fae5; }
+
+    /* ── Alert border accents ──────────────────────────────── */
+    .alert-budget  { border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.06); }
+    .alert-cap     { border-left: 3px solid #ef4444; background: rgba(239,68,68,0.06); }
+    .alert-info    { border-left: 3px solid #60a5fa; background: rgba(96,165,250,0.05); }
+
+    /* ── Category pill ─────────────────────────────────────── */
+    .cat-pill {
+      display: inline-block; padding: 2px 9px; border-radius: 9999px;
+      font-size: 0.7rem; font-weight: 600; line-height: 1.5;
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 9999px; }
+
+    /* ── Tree animations ───────────────────────────────────── */
+    @keyframes sway-full {
+      0%,100% { transform: rotate(-2.5deg) translateX(-3px); }
+      50%     { transform: rotate(2.5deg)  translateX(3px); }
+    }
+    @keyframes sway-mid {
+      0%,100% { transform: rotate(-1.5deg) translateX(-2px); }
+      50%     { transform: rotate(1.5deg)  translateX(2px); }
+    }
+    @keyframes sway-slow {
+      0%,100% { transform: rotate(-1deg); }
+      50%     { transform: rotate(1deg); }
+    }
+    @keyframes shake-stress {
+      0%,100% { transform: rotate(-3deg) translateX(-2px); }
+      50%     { transform: rotate(3deg)  translateX(2px); }
+    }
+    @keyframes sparkle {
+      0%,100% { opacity:0.9; r:2.5; }
+      50%     { opacity:0.1; r:1.5; }
+    }
+    @keyframes leaf-drop {
+      0%   { opacity:0.6; transform: translate(0,0) rotate(0deg); }
+      100% { opacity:0;   transform: translate(-18px,30px) rotate(-40deg); }
+    }
+    @keyframes leaf-drop2 {
+      0%   { opacity:0.5; transform: translate(0,0) rotate(0deg); }
+      100% { opacity:0;   transform: translate(15px,28px) rotate(35deg); }
+    }
+    @keyframes pulse-danger {
+      0%,100% { opacity:0.3; transform:scale(1); }
+      50%     { opacity:0;   transform:scale(1.6); }
+    }
+    @keyframes dead-flicker {
+      0%,95%,100% { opacity:1; }
+      97%          { opacity:0.4; }
+    }
+
+    .canopy-main  { animation: sway-full   3.2s ease-in-out infinite; transform-origin: 80px 120px; }
+    .canopy-lower { animation: sway-mid    4s   ease-in-out infinite; transform-origin: 80px 118px; animation-delay: -0.8s; }
+    .canopy-med   { animation: sway-slow   5s   ease-in-out infinite; transform-origin: 80px 108px; animation-delay: -1.2s; }
+    .canopy-stress{ animation: shake-stress 1.8s ease-in-out infinite; transform-origin: 80px 115px; }
+    .leaf-falling1{ animation: leaf-drop   4s   ease-in  infinite; animation-delay: -1s; }
+    .leaf-falling2{ animation: leaf-drop2  5.5s ease-in  infinite; animation-delay: -3s; }
+    .danger-pulse { animation: pulse-danger 2s  ease-out infinite; transform-origin: 80px 70px; }
+    .dead-flicker { animation: dead-flicker 6s  linear   infinite; }
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
+
+    /* ── Stat card shine ───────────────────────────────────── */
+    .stat-card::before {
+      content:''; position:absolute; inset:0; border-radius:inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+      pointer-events:none;
+    }
+    .stat-card { position:relative; }
+
+    /* ── Btn primary ───────────────────────────────────────── */
+    .btn-primary {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #fff;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(16,185,129,0.1);
+      color: #6ee7b7;
+      font-weight: 500;
+      border-radius: 0.75rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: 1px solid rgba(16,185,129,0.25);
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover {
+      background: rgba(16,185,129,0.18);
+      border-color: rgba(16,185,129,0.5);
+    }
+    .btn-danger {
+      background: rgba(239,68,68,0.1);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 0.5rem;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.2); }
+
+    /* ── Fade-in ───────────────────────────────────────────── */
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .tab-section { animation: fadeIn 0.2s ease-out; }
+
+    /* ── Report monospace ──────────────────────────────────── */
+    #report-content {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body class="relative">
+
+<!-- ╔═══════════════════════════════════════════════════════╗ -->
+<!-- ║  TOAST                                                ║ -->
+<!-- ╚═══════════════════════════════════════════════════════╝ -->
+<div id="toast"
+     class="fixed top-4 right-4 z-[100] px-4 py-3 rounded-xl text-sm font-medium max-w-xs pointer-events-none opacity-0 translate-y-1"
+     style="background:rgba(6,30,20,0.9);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;box-shadow:0 8px 32px rgba(16,185,129,0.2);">
+</div>
+
+<!-- ╔═══════════════════════════════════════════════════════╗ -->
+<!-- ║  HEADER                                               ║ -->
+<!-- ╚═══════════════════════════════════════════════════════╝ -->
+<header class="glass-strong sticky top-0 z-40 px-4 py-3 flex items-center justify-between relative">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-2xl"
+         style="background:linear-gradient(135deg,rgba(16,185,129,0.25),rgba(6,78,59,0.4));border:1px solid rgba(16,185,129,0.3);">
+      🌿
+    </div>
+    <div>
+      <div class="font-bold text-emerald-300 text-lg leading-none tracking-tight">FinanceBIO</div>
+      <div class="text-xs text-emerald-700">HKU Student Budget Assistant · COMP1110</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <span id="tx-count-badge"
+          class="text-xs font-medium px-3 py-1 rounded-full"
+          style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.2);color:#6ee7b7;">
+      0 transactions
+    </span>
+    <button onclick="clearAllData()"
+            class="text-xs px-3 py-1 rounded-full transition-colors hover:text-red-400"
+            style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#4b5563;">
+      ✕ Clear
+    </button>
+  </div>
+</header>
+
+<!-- ╔═══════════════════════════════════════════════════════╗ -->
+<!-- ║  NAV                                                  ║ -->
+<!-- ╚═══════════════════════════════════════════════════════╝ -->
+<nav class="glass-strong border-b px-4 overflow-x-auto" style="border-color:rgba(16,185,129,0.1);">
+  <div class="flex gap-1 py-2 min-w-max">
+    <button class="nav-tab active" id="nav-dashboard"     onclick="showTab('dashboard')">📊 Dashboard</button>
+    <button class="nav-tab"        id="nav-transactions"  onclick="showTab('transactions')">📋 Transactions</button>
+    <button class="nav-tab"        id="nav-add"           onclick="showTab('add')">➕ Add Transaction</button>
+    <button class="nav-tab"        id="nav-alerts"        onclick="showTab('alerts')">🔔 Alerts</button>
+    <button class="nav-tab"        id="nav-rules"         onclick="showTab('rules')">⚙️ Budget Rules</button>
+    <button class="nav-tab"        id="nav-report"        onclick="showTab('report')">📄 Report</button>
+  </div>
+</nav>
+
+<!-- ╔═══════════════════════════════════════════════════════╗ -->
+<!-- ║  MAIN                                                 ║ -->
+<!-- ╚═══════════════════════════════════════════════════════╝ -->
+<main class="relative z-10 p-4 max-w-7xl mx-auto space-y-4 pb-12">
+
+  <!-- ═══ DASHBOARD ══════════════════════════════════════════ -->
+  <section id="tab-dashboard" class="tab-section space-y-4">
+
+    <!-- Top row: 3 dashboard cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <!-- ─ Spend Overview ─ -->
+      <div class="glass-md rounded-2xl p-5 stat-card">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-4">💰 Spend Overview</div>
+        <div class="space-y-2.5 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Total Spending</span>
+            <span class="font-bold text-emerald-300 text-base" id="dash-total">HKD 0.00</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Transactions</span>
+            <span class="font-semibold text-slate-300" id="dash-count">0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Avg / transaction</span>
+            <span class="text-slate-300" id="dash-avg">HKD 0.00</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Top Category</span>
+            <span class="text-emerald-300 font-medium" id="dash-top-cat">N/A</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Active Alerts</span>
+            <span class="font-bold" id="dash-alert-count">0</span>
+          </div>
+          <div class="h-px" style="background:rgba(16,185,129,0.12);"></div>
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Budget Health</span>
+            <span class="font-bold text-sm" id="dash-health">Stable</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-700">Spend Density</span>
+            <span class="text-slate-300 text-xs" id="dash-density">0.0 tx/week</span>
+          </div>
+        </div>
+        <!-- Mini category bars -->
+        <div class="mt-4 space-y-1.5">
+          <div class="text-xs text-emerald-700 mb-2">Category Breakdown</div>
+          <div id="cat-bars"></div>
+        </div>
+      </div>
+
+      <!-- ─ Category Chart ─ -->
+      <div class="glass-md rounded-2xl p-5 flex flex-col items-center stat-card">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-4 w-full">🥧 Category Split</div>
+        <div class="relative" style="width:176px;height:176px;">
+          <canvas id="pie-chart" width="176" height="176"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <div class="text-xs text-emerald-700">Health</div>
+            <div class="text-2xl font-black" id="pie-score-num" style="line-height:1.1;">100</div>
+            <div class="text-xs text-emerald-700">/100</div>
+          </div>
+        </div>
+        <div id="pie-legend" class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs w-full max-w-xs"></div>
+      </div>
+
+      <!-- ─ Wealth Tree ─ -->
+      <div class="glass-md rounded-2xl p-5 flex flex-col items-center stat-card">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-1 w-full">🌳 Wealth Tree</div>
+        <div class="text-xs mb-3 w-full" id="tree-status-label" style="color:#6ee7b7;">Financial health indicator</div>
+        <div id="wealth-tree-svg" class="flex-1 flex items-center justify-center w-full" style="min-height:160px;"></div>
+        <div class="mt-3 text-center">
+          <div class="text-xs text-emerald-700">Health Score</div>
+          <div class="text-xl font-black" id="tree-score-label" style="color:#10b981;">100 / 100</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="glass rounded-2xl p-4">
+      <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-3">⚡ Quick Actions</div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn-secondary" onclick="showTab('add')">➕ Add Transaction</button>
+        <button class="btn-secondary" onclick="showTab('alerts')">🔔 Check Alerts</button>
+        <button class="btn-secondary" onclick="showTab('report');generateReport()">📄 Generate Report</button>
+        <button class="btn-secondary" onclick="loadCaseStudy('case1')">📦 Case 1: CYM Food</button>
+        <button class="btn-secondary" onclick="loadCaseStudy('case2')">📦 Case 2: Transport</button>
+        <button class="btn-secondary" onclick="loadCaseStudy('case3')">📦 Case 3: Subscriptions</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRANSACTIONS ════════════════════════════════════════ -->
+  <section id="tab-transactions" class="tab-section hidden space-y-4">
+    <div class="glass-md rounded-2xl p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest">📋 All Transactions</div>
+        <div class="flex gap-2 flex-wrap">
+          <select id="filter-cat" onchange="renderTransactions()"
+                  class="rounded-lg px-3 py-1.5 text-xs">
+            <option value="">All Categories</option>
+          </select>
+          <input type="text" id="filter-search" oninput="renderTransactions()"
+                 placeholder="Search…" class="rounded-lg px-3 py-1.5 text-xs w-28">
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[600px]">
+          <thead>
+            <tr class="text-xs uppercase tracking-wider" style="color:#4b7a5e;border-bottom:1px solid rgba(16,185,129,0.12);">
+              <th class="text-left py-2 pr-4 font-medium">Date</th>
+              <th class="text-left py-2 pr-4 font-medium">Amount (HKD)</th>
+              <th class="text-left py-2 pr-4 font-medium">Category</th>
+              <th class="text-left py-2 pr-4 font-medium">Description</th>
+              <th class="text-left py-2 pr-4 font-medium">Notes</th>
+              <th class="py-2 w-8"></th>
+            </tr>
+          </thead>
+          <tbody id="tx-tbody">
+            <tr><td colspan="6" class="text-center py-12 text-emerald-800">No transactions yet. Add one!</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="tx-summary-row" class="mt-4 pt-3 flex gap-6 text-xs text-emerald-700" style="border-top:1px solid rgba(16,185,129,0.1);"></div>
+    </div>
+  </section>
+
+  <!-- ═══ ADD TRANSACTION ══════════════════════════════════════ -->
+  <section id="tab-add" class="tab-section hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Guided Input -->
+      <div class="glass-md rounded-2xl p-5 stat-card">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-5">📝 Guided Input</div>
+        <form onsubmit="addTransactionGuided(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Date (YYYY-MM-DD) <span class="text-red-500">*</span></label>
+            <input type="date" id="g-date" class="w-full rounded-xl px-3 py-2.5 text-sm" required>
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Amount (HKD, max 100,000) <span class="text-red-500">*</span></label>
+            <input type="number" id="g-amount" min="0.01" max="100000" step="0.01"
+                   placeholder="e.g. 45.50" class="w-full rounded-xl px-3 py-2.5 text-sm" required>
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Category <span class="text-red-500">*</span></label>
+            <select id="g-category" class="w-full rounded-xl px-3 py-2.5 text-sm" required>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Description</label>
+            <input type="text" id="g-desc" placeholder="e.g. CYM lunch"
+                   class="w-full rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Notes (optional)</label>
+            <input type="text" id="g-notes" placeholder="e.g. overpriced"
+                   class="w-full rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <button type="submit" class="btn-primary w-full py-2.5">➕ Add Transaction</button>
+        </form>
+      </div>
+
+      <!-- Smart Text Input -->
+      <div class="glass-md rounded-2xl p-5 stat-card">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-5">✨ Smart Text Input</div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Natural Language Entry</label>
+            <textarea id="smart-input" rows="4"
+                      placeholder="e.g. 2026/04/21 spent $65.5 on food CYM roast goose rice"
+                      class="w-full rounded-xl px-3 py-2.5 text-sm resize-none"></textarea>
+          </div>
+          <button onclick="parseSmartInput()" class="btn-primary w-full py-2.5">🔍 Parse Text</button>
+
+          <!-- Parsed preview -->
+          <div id="smart-preview" class="hidden rounded-xl p-4 space-y-3"
+               style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);">
+            <div class="text-xs font-semibold text-emerald-400">Parsed Result — review and confirm:</div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <div class="text-xs text-emerald-700 mb-1">Date</div>
+                <input type="date" id="sp-date" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+              </div>
+              <div>
+                <div class="text-xs text-emerald-700 mb-1">Amount (HKD)</div>
+                <input type="number" id="sp-amount" step="0.01" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+              </div>
+              <div>
+                <div class="text-xs text-emerald-700 mb-1">Category</div>
+                <select id="sp-category" class="w-full rounded-lg px-2.5 py-1.5 text-xs"></select>
+              </div>
+              <div>
+                <div class="text-xs text-emerald-700 mb-1">Description</div>
+                <input type="text" id="sp-desc" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+              </div>
+            </div>
+            <button onclick="confirmSmartInput()" class="btn-primary w-full py-2 text-xs">✓ Confirm &amp; Add</button>
+          </div>
+
+          <!-- Tips -->
+          <div class="rounded-xl p-4 text-xs space-y-1.5"
+               style="background:rgba(6,78,59,0.15);border:1px solid rgba(16,185,129,0.1);">
+            <div class="font-semibold text-emerald-500 mb-2">💡 Format Tips</div>
+            <div class="text-emerald-700">Date: YYYY-MM-DD · YYYY/MM/DD · YYYY.MM.DD</div>
+            <div class="text-emerald-700">Amount: $45.50 · HKD 45.50 · 45.50</div>
+            <div class="text-emerald-700">Categories: food, dining, mtr, bus, taxi, rent, book, subscription, netflix…</div>
+            <div class="text-emerald-700 pt-1 border-t mt-1" style="border-color:rgba(16,185,129,0.1);">
+              <span class="text-emerald-500">Example:</span> 2026/04/21 spent $65.5 on food CYM roast goose
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ALERTS ════════════════════════════════════════════════ -->
+  <section id="tab-alerts" class="tab-section hidden">
+    <div class="glass-md rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-5">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest">🔔 Financial Alerts</div>
+        <button onclick="checkAndRenderAlerts()" class="btn-secondary text-xs py-1.5 px-3">↺ Refresh</button>
+      </div>
+      <div id="alerts-container">
+        <div class="text-center py-12 text-emerald-800">Loading…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ BUDGET RULES ══════════════════════════════════════════ -->
+  <section id="tab-rules" class="tab-section hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Active Rules -->
+      <div class="glass-md rounded-2xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+          <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest">⚙️ Active Rules</div>
+          <div class="flex gap-2">
+            <button onclick="loadPresetRules('balanced')" class="btn-secondary text-xs py-1 px-3">Balanced</button>
+            <button onclick="loadPresetRules('saving')"   class="btn-secondary text-xs py-1 px-3">Saving-First</button>
+          </div>
+        </div>
+        <div id="rules-list" class="space-y-2">
+          <div class="text-center py-8 text-emerald-800">No rules configured.</div>
+        </div>
+      </div>
+
+      <!-- Add Rule -->
+      <div class="glass-md rounded-2xl p-5 stat-card">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest mb-5">➕ Add Budget Rule</div>
+        <form onsubmit="addRule(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Category</label>
+            <select id="r-category" class="w-full rounded-xl px-3 py-2.5 text-sm" required></select>
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Rule Type</label>
+            <select id="r-type" onchange="updateRuleHint()" class="w-full rounded-xl px-3 py-2.5 text-sm">
+              <option value="cap">Cap — Fixed HKD amount</option>
+              <option value="percentage">Percentage — % of total spending</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">
+              Threshold
+              <span id="r-threshold-hint" class="text-emerald-800 ml-1">(HKD amount, e.g. 50)</span>
+            </label>
+            <input type="number" id="r-threshold" min="0.01" step="0.01"
+                   placeholder="e.g. 50" class="w-full rounded-xl px-3 py-2.5 text-sm" required>
+          </div>
+          <div>
+            <label class="block text-xs text-emerald-700 mb-1.5">Period</label>
+            <select id="r-period" class="w-full rounded-xl px-3 py-2.5 text-sm">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly" selected>Monthly</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary w-full py-2.5">Add Rule</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ REPORT ════════════════════════════════════════════════ -->
+  <section id="tab-report" class="tab-section hidden">
+    <div class="glass-md rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-5">
+        <div class="text-xs font-semibold text-emerald-500 uppercase tracking-widest">📄 Financial Report</div>
+        <button onclick="generateReport()" class="btn-primary px-5 py-2">Generate Report</button>
+      </div>
+      <div id="report-content" class="rounded-xl p-5 text-emerald-300 min-h-48"
+           style="background:rgba(2,12,8,0.6);border:1px solid rgba(16,185,129,0.12);">
+        Click <strong>Generate Report</strong> to create a financial summary.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗ -->
+<!-- ║  JAVASCRIPT                                               ║ -->
+<!-- ╚═══════════════════════════════════════════════════════════╝ -->
+<script>
+'use strict';
+
+/* ════════════════════════════════════════════════════════════
+   DATA MODEL  (mirrors budget_model.py)
+   ════════════════════════════════════════════════════════════ */
+// Transaction:  { date, amount, category, description, notes }
+// BudgetRule:   { category, threshold, period, rule_type, enabled }
+//   rule_type "cap"        → threshold is HKD fixed amount
+//   rule_type "percentage" → threshold is 0.0–1.0 (e.g. 0.15 = 15%)
+//   period: "daily" | "weekly" | "monthly"
+
+const CATEGORIES = ['Dining','Food','Housing','Transport','Academic','Social','Digital','Income','Other'];
+const CAT_COLORS = {
+  Dining:'#10b981', Food:'#34d399', Housing:'#6366f1', Transport:'#f59e0b',
+  Academic:'#3b82f6', Social:'#ec4899', Digital:'#8b5cf6', Income:'#22c55e', Other:'#94a3b8'
+};
+
+/* ════════════════════════════════════════════════════════════
+   STORAGE
+   ════════════════════════════════════════════════════════════ */
+function loadData()  { try { return JSON.parse(localStorage.getItem('fb_transactions') || '[]'); } catch{ return []; } }
+function saveData(t) { localStorage.setItem('fb_transactions', JSON.stringify(t)); }
+function loadRules() { try { return JSON.parse(localStorage.getItem('fb_rules') || 'null') || defaultRules(); } catch{ return defaultRules(); } }
+function saveRules(r){ localStorage.setItem('fb_rules', JSON.stringify(r)); }
+
+function defaultRules() {
+  return [
+    { category:'Dining',    threshold:0.30, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Housing',   threshold:0.40, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Transport', threshold:0.15, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Digital',   threshold:150,  period:'monthly', rule_type:'cap',        enabled:true },
+    { category:'Social',    threshold:0.10, period:'monthly', rule_type:'percentage', enabled:true },
+  ];
+}
+
+/* ════════════════════════════════════════════════════════════
+   VALIDATION  (mirrors validator.py)
+   ════════════════════════════════════════════════════════════ */
+function validateDate(s)     { if (!s) return false; return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s)); }
+function validateAmount(v)   { const n = parseFloat(v); return !isNaN(n) && n > 0 && n <= 100000; }
+function validateCategory(c) { return CATEGORIES.includes(c); }
+
+/* ════════════════════════════════════════════════════════════
+   ANALYZER  (mirrors analyzer.py)
+   ════════════════════════════════════════════════════════════ */
+function getTotalSpending(txs) {
+  return txs.reduce((s, t) => s + t.amount, 0);
+}
+function getCategoryTotals(txs) {
+  const m = {};
+  for (const t of txs) m[t.category] = (m[t.category] || 0) + t.amount;
+  return m;
+}
+function getTopCategories(txs, n=3) {
+  return Object.entries(getCategoryTotals(txs)).sort((a,b) => b[1]-a[1]).slice(0, n);
+}
+function getDailyBreakdown(txs) {
+  const m = {};
+  for (const t of txs) m[t.date] = (m[t.date] || 0) + t.amount;
+  return m;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ALERT ENGINE  (mirrors alert_engine.py — all 5 rules)
+   ════════════════════════════════════════════════════════════ */
+function checkAllAlerts(txs, rules) {
+  const alerts = [];
+  const totalSpent = getTotalSpending(txs);
+
+  if (totalSpent <= 0)
+    return [{ type:'info', msg:'INFO: No spending recorded. Budget rules cannot be evaluated.' }];
+
+  const catTotals = getCategoryTotals(txs);
+
+  for (const rule of rules) {
+    if (!rule.enabled) continue;
+    const cat = rule.category;
+    const currentAmt = catTotals[cat] || 0;
+
+    // Rule type 1: percentage-based (e.g. Food 15%)
+    if (rule.rule_type === 'percentage') {
+      const actualPct = currentAmt / totalSpent;
+      const limitPct  = rule.threshold;
+      if (actualPct > limitPct) {
+        alerts.push({ type:'budget',
+          msg:`BUDGET ALERT: ${cat} represents ${(actualPct*100).toFixed(1)}% of total spending. `
+            + `(Limit: ${(limitPct*100).toFixed(1)}% based on your chosen profile)` });
+      }
+    }
+    // Rule type 2: fixed cap (e.g. Daily HK$50)
+    else if (rule.rule_type === 'cap') {
+      if (currentAmt > rule.threshold) {
+        alerts.push({ type:'cap',
+          msg:`CAP ALERT: ${cat} spending ($${currentAmt.toFixed(2)}) exceeds `
+            + `your fixed limit of $${rule.threshold.toFixed(2)}!` });
+      }
+    }
+  }
+
+  // Rule 5: Uncategorized warning
+  const otherCount = txs.filter(t => t.category === 'Other').length;
+  if (otherCount > 0)
+    alerts.push({ type:'info',
+      msg:`INFO: You have ${otherCount} transaction${otherCount !== 1 ? 's' : ''} in 'Other'. Consider categorizing them.` });
+
+  return alerts;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISUALIZER / HEALTH SCORE  (mirrors visualizer.py)
+   ════════════════════════════════════════════════════════════ */
+const ALERT_PENALTY = 15;
+
+function healthScore(alerts, txs) {
+  if (!txs || txs.length === 0) return 100;
+  const alertCount = alerts.filter(a => a.type !== 'info').length;
+  return Math.max(0, Math.min(100, 100 - alertCount * ALERT_PENALTY));
+}
+function scoreColor(s) {
+  if (s >= 80) return '#10b981';
+  if (s >= 50) return '#f59e0b';
+  if (s >= 20) return '#f97316';
+  return '#ef4444';
+}
+function scoreLabel(s) {
+  if (s >= 80) return 'Stable';
+  if (s >= 50) return 'Watch';
+  if (s >= 20) return 'At Risk';
+  return 'Critical';
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANIMATED WEALTH TREE  (replaces ASCII tree from visualizer.py)
+   Four states mirror the four ASCII tree shapes: 80+, 50+, 20+, <20
+   ════════════════════════════════════════════════════════════ */
+function renderWealthTree(score) {
+  const container = document.getElementById('wealth-tree-svg');
+  const label     = document.getElementById('tree-status-label');
+  const scoreLbl  = document.getElementById('tree-score-label');
+
+  scoreLbl.textContent = `${score} / 100`;
+  scoreLbl.style.color = scoreColor(score);
+
+  let svg = '';
+
+  if (score >= 80) {
+    /* ── FLOURISHING TREE ─ full leafy canopy, sparkles, gentle sway ── */
+    label.textContent = 'Flourishing — great financial posture!';
+    label.style.color = '#34d399';
+    svg = `<svg width="160" height="200" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Shadow -->
+      <ellipse cx="80" cy="190" rx="28" ry="6" fill="rgba(0,0,0,0.3)"/>
+      <!-- Trunk -->
+      <rect x="70" y="126" width="20" height="56" rx="5" fill="#5c3317"/>
+      <rect x="74" y="132" width="11" height="50" rx="4" fill="#7c4520" opacity="0.8"/>
+      <!-- Root left -->
+      <path d="M70 176 Q52 184 42 180" stroke="#5c3317" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- Root right -->
+      <path d="M90 176 Q108 184 118 180" stroke="#5c3317" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- Root centre -->
+      <path d="M80 180 Q80 190 80 194" stroke="#5c3317" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Lower canopy -->
+      <g class="canopy-lower">
+        <ellipse cx="80" cy="110" rx="52" ry="32" fill="#065f46"/>
+        <ellipse cx="80" cy="108" rx="48" ry="29" fill="#047857"/>
+      </g>
+      <!-- Main canopy -->
+      <g class="canopy-main">
+        <ellipse cx="80" cy="82" rx="48" ry="36" fill="#059669"/>
+        <ellipse cx="80" cy="80" rx="44" ry="33" fill="#10b981"/>
+        <!-- Leaf clusters -->
+        <ellipse cx="54" cy="72" rx="18" ry="14" fill="#34d399" opacity="0.65"/>
+        <ellipse cx="104" cy="70" rx="17" ry="13" fill="#34d399" opacity="0.6"/>
+        <ellipse cx="78" cy="56" rx="20" ry="14" fill="#6ee7b7" opacity="0.55"/>
+        <ellipse cx="60" cy="90" rx="12" ry="9"  fill="#a7f3d0" opacity="0.35"/>
+        <ellipse cx="100" cy="92" rx="11" ry="9" fill="#a7f3d0" opacity="0.3"/>
+      </g>
+      <!-- Sparkles (animated) -->
+      <circle cx="50" cy="66" r="2.5" fill="#a7f3d0">
+        <animate attributeName="opacity" values="0.9;0.1;0.9" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="r"       values="2.5;1.2;2.5" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="108" cy="62" r="2" fill="#d1fae5">
+        <animate attributeName="opacity" values="0.7;0;0.7" dur="3.1s" begin="0.6s" repeatCount="indefinite"/>
+        <animate attributeName="r"       values="2;1;2"     dur="3.1s" begin="0.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="80" cy="48" r="2.2" fill="#ecfdf5">
+        <animate attributeName="opacity" values="0.8;0;0.8" dur="2.8s" begin="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="r"       values="2.2;0.8;2.2" dur="2.8s" begin="1.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="62" cy="100" r="1.8" fill="#6ee7b7">
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="3.5s" begin="0.3s" repeatCount="indefinite"/>
+      </circle>
+    </svg>`;
+  }
+  else if (score >= 50) {
+    /* ── MODERATE TREE ─ smaller canopy, some stress patches, slow sway ── */
+    label.textContent = 'Moderate — watch your spending trends';
+    label.style.color = '#f59e0b';
+    svg = `<svg width="160" height="200" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="80" cy="190" rx="24" ry="5" fill="rgba(0,0,0,0.25)"/>
+      <!-- Trunk -->
+      <rect x="70" y="120" width="20" height="62" rx="5" fill="#5c3317"/>
+      <rect x="74" y="128" width="11" height="54" rx="4" fill="#7c4520" opacity="0.7"/>
+      <!-- Side branches -->
+      <path d="M70 140 Q50 134 40 128" stroke="#5c3317" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M90 140 Q110 134 120 128" stroke="#5c3317" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- Roots -->
+      <path d="M70 178 Q55 186 44 182" stroke="#5c3317" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M90 178 Q105 186 116 182" stroke="#5c3317" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Canopy (smaller) -->
+      <g class="canopy-med">
+        <ellipse cx="80" cy="96"  rx="44" ry="30" fill="#065f46"/>
+        <ellipse cx="80" cy="94"  rx="40" ry="27" fill="#047857"/>
+        <ellipse cx="58" cy="86"  rx="16" ry="12" fill="#059669" opacity="0.7"/>
+        <ellipse cx="100" cy="88" rx="14" ry="11" fill="#059669" opacity="0.65"/>
+        <ellipse cx="80" cy="76"  rx="18" ry="12" fill="#10b981" opacity="0.6"/>
+      </g>
+      <!-- Yellow-brown stress patches -->
+      <ellipse cx="52" cy="100" rx="9" ry="6" fill="#d97706" opacity="0.45"/>
+      <ellipse cx="106" cy="96" rx="8" ry="6" fill="#b45309" opacity="0.4"/>
+      <ellipse cx="78" cy="72"  rx="6" ry="5" fill="#92400e" opacity="0.3"/>
+    </svg>`;
+  }
+  else if (score >= 20) {
+    /* ── AT-RISK TREE ─ bare branches, few leaves, stress shake ── */
+    label.textContent = 'At Risk — reduce your top category spending';
+    label.style.color = '#f97316';
+    svg = `<svg width="160" height="200" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="80" cy="190" rx="20" ry="4" fill="rgba(0,0,0,0.2)"/>
+      <!-- Trunk (thinner, stressed) -->
+      <rect x="72" y="118" width="16" height="64" rx="4" fill="#44240a"/>
+      <line x1="78" y1="130" x2="82" y2="155" stroke="#2d1a07" stroke-width="1.5"/>
+      <!-- Roots -->
+      <path d="M72 178 Q57 186 46 182" stroke="#44240a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M88 178 Q103 186 114 182" stroke="#44240a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Bare branches -->
+      <path d="M80 122 Q56 110 36 106" stroke="#44240a" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M80 122 Q104 110 124 106" stroke="#44240a" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M80 136 Q62 128 48 124" stroke="#44240a" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M80 136 Q98 128 112 124" stroke="#44240a" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M36 106 Q28 98 26 90"  stroke="#44240a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M124 106 Q132 98 134 90" stroke="#44240a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Sparse leaves (stressed shake) -->
+      <g class="canopy-stress">
+        <ellipse cx="34"  cy="100" rx="10" ry="7" fill="#78350f" opacity="0.7"/>
+        <ellipse cx="126" cy="100" rx="9"  ry="7" fill="#78350f" opacity="0.65"/>
+        <ellipse cx="48"  cy="88"  rx="8"  ry="6" fill="#92400e" opacity="0.6"/>
+        <ellipse cx="110" cy="90"  rx="7"  ry="6" fill="#92400e" opacity="0.55"/>
+        <ellipse cx="80"  cy="82"  rx="10" ry="7" fill="#a16207" opacity="0.5"/>
+      </g>
+      <!-- Falling leaves -->
+      <ellipse class="leaf-falling1" cx="32" cy="138" rx="5" ry="4" fill="#b45309" opacity="0.5"
+               transform="rotate(-20,32,138)"/>
+      <ellipse class="leaf-falling2" cx="128" cy="148" rx="4" ry="3" fill="#92400e" opacity="0.4"
+               transform="rotate(15,128,148)"/>
+    </svg>`;
+  }
+  else {
+    /* ── DEAD TREE ─ bare, cracked, danger pulse ── */
+    label.textContent = 'Critical — pause non-essential spending now!';
+    label.style.color = '#ef4444';
+    svg = `<svg width="160" height="200" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="80" cy="190" rx="18" ry="4" fill="rgba(0,0,0,0.2)"/>
+      <!-- Pulsing danger circle -->
+      <circle class="danger-pulse" cx="80" cy="80" r="42" fill="none" stroke="#ef4444" stroke-width="1.5"/>
+      <!-- Trunk (cracked) -->
+      <rect x="72" y="110" width="16" height="72" rx="3" fill="#3b1a08" class="dead-flicker"/>
+      <line x1="77" y1="122" x2="81" y2="148" stroke="#2d1a07" stroke-width="1.5"/>
+      <line x1="82" y1="138" x2="79" y2="158" stroke="#2d1a07" stroke-width="1.2"/>
+      <!-- Roots -->
+      <path d="M72 178 Q57 188 44 184" stroke="#3b1a08" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M88 178 Q103 188 116 184" stroke="#3b1a08" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Dead branches -->
+      <path d="M80 114 Q52 100 30  94" stroke="#3b1a08" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M80 114 Q108 100 130 94" stroke="#3b1a08" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M30  94 Q20  84 18 76" stroke="#3b1a08" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M130 94 Q140 84 142 76" stroke="#3b1a08" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M30  94 Q24 100 22 108" stroke="#3b1a08" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M130 94 Q136 100 138 108" stroke="#3b1a08" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M80 126 Q58 118 44 114" stroke="#3b1a08" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M80 126 Q102 118 116 114" stroke="#3b1a08" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- ✕ dead marker -->
+      <text x="68" y="78" font-size="20" fill="#ef4444" font-weight="bold" opacity="0.85" class="dead-flicker">✕</text>
+    </svg>`;
+  }
+
+  container.innerHTML = svg;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SMART INPUT PARSER  (mirrors smart_input.py)
+   ════════════════════════════════════════════════════════════ */
+const SYNONYMS = {
+  dining:'Dining', food:'Dining', meal:'Dining', lunch:'Dining', dinner:'Dining',
+  breakfast:'Dining', restaurant:'Dining', cym:'Dining', canteen:'Dining', snack:'Dining',
+  housing:'Housing', rent:'Housing', accommodation:'Housing', hostel:'Housing',
+  transport:'Transport', mtr:'Transport', bus:'Transport', taxi:'Transport',
+  ferry:'Transport', uber:'Transport', minibus:'Transport', train:'Transport',
+  academic:'Academic', book:'Academic', tuition:'Academic', stationery:'Academic',
+  library:'Academic', printing:'Academic',
+  social:'Social', party:'Social', entertainment:'Social', movie:'Social',
+  cinema:'Social', karaoke:'Social', bar:'Social',
+  digital:'Digital', subscription:'Digital', netflix:'Digital', spotify:'Digital',
+  adobe:'Digital', app:'Digital', youtube:'Digital', icloud:'Digital', canva:'Digital',
+  income:'Income', salary:'Income', allowance:'Income', stipend:'Income',
+  other:'Other',
+};
+
+function parseUnstructured(raw) {
+  if (!raw || !raw.trim()) return null;
+
+  // Extract date
+  const dateRe = /\b(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})\b/;
+  let date = null, remaining = raw;
+  const dm = raw.match(dateRe);
+  if (dm) {
+    date = `${dm[1]}-${String(parseInt(dm[2])).padStart(2,'0')}-${String(parseInt(dm[3])).padStart(2,'0')}`;
+    remaining = remaining.replace(dm[0], ' ');
+  }
+
+  // Extract amount
+  let amount = null;
+  const am = remaining.match(/(?:hkd|\$)?\s*(\d+(?:\.\d+)?)/i);
+  if (am) { amount = parseFloat(am[1]); remaining = remaining.replace(am[0], ' '); }
+
+  // Extract category
+  let category = null;
+  const lower = remaining.toLowerCase();
+  for (const [key, cat] of Object.entries(SYNONYMS)) {
+    const re = new RegExp(`\\b${key}\\b`, 'i');
+    if (re.test(lower)) { category = cat; remaining = remaining.replace(re, ' '); break; }
+  }
+
+  const description = remaining.replace(/\s+/g,' ').trim().replace(/^[,.\-\s]+|[,.\-\s]+$/g,'') || 'Quick entry';
+  return { date, amount, category, description };
+}
+
+/* ════════════════════════════════════════════════════════════
+   CASE STUDY DATA  (mirrors data/ JSON files from README)
+   ════════════════════════════════════════════════════════════ */
+const CASE_STUDIES = {
+  case1: {
+    name: 'Case 1: Student CYM Food Budget',
+    rules: [
+      { category:'Dining', threshold:50, period:'daily', rule_type:'cap', enabled:true },
+    ],
+    transactions: [
+      { date:'2026-04-14', amount:45.00, category:'Dining',    description:'CYM lunch',           notes:'' },
+      { date:'2026-04-14', amount:22.00, category:'Dining',    description:'CYM dinner',           notes:'' },
+      { date:'2026-04-15', amount:65.50, category:'Dining',    description:'CYM roast goose rice', notes:'overpriced' },
+      { date:'2026-04-16', amount:38.00, category:'Dining',    description:'CYM lunch',            notes:'' },
+      { date:'2026-04-16', amount:18.00, category:'Transport', description:'MTR home',             notes:'' },
+      { date:'2026-04-17', amount:52.00, category:'Dining',    description:'CYM set meal',         notes:'' },
+      { date:'2026-04-18', amount:30.00, category:'Social',    description:'Bubble tea with friends', notes:'' },
+      { date:'2026-04-18', amount:43.00, category:'Dining',    description:'CYM wonton noodles',   notes:'' },
+    ]
+  },
+  case2: {
+    name: 'Case 2: Monthly Transport Tracking',
+    rules: [
+      { category:'Transport', threshold:75,  period:'weekly',  rule_type:'cap', enabled:true },
+      { category:'Transport', threshold:300, period:'monthly', rule_type:'cap', enabled:true },
+    ],
+    transactions: [
+      { date:'2026-04-01', amount:18.5, category:'Transport', description:'MTR — HKU to Mong Kok', notes:'' },
+      { date:'2026-04-02', amount:22.0, category:'Transport', description:'MTR return trip',        notes:'' },
+      { date:'2026-04-03', amount:15.0, category:'Transport', description:'Bus 970',                notes:'' },
+      { date:'2026-04-04', amount:18.5, category:'Transport', description:'MTR',                    notes:'' },
+      { date:'2026-04-05', amount:12.0, category:'Transport', description:'Minibus',                notes:'' },
+      { date:'2026-04-07', amount:45.0, category:'Transport', description:'Taxi late night',        notes:'missed last train' },
+      { date:'2026-04-08', amount:18.5, category:'Transport', description:'MTR',                    notes:'' },
+      { date:'2026-04-09', amount:22.0, category:'Transport', description:'MTR cross-harbour',      notes:'' },
+      { date:'2026-04-10', amount:18.5, category:'Transport', description:'MTR',                    notes:'' },
+      { date:'2026-04-11', amount:15.0, category:'Transport', description:'Bus',                    notes:'' },
+      { date:'2026-04-12', amount:35.0, category:'Transport', description:'Taxi',                   notes:'' },
+      { date:'2026-04-14', amount:18.5, category:'Transport', description:'MTR',                    notes:'' },
+      { date:'2026-04-15', amount:22.0, category:'Transport', description:'MTR',                    notes:'' },
+      { date:'2026-04-16', amount:18.5, category:'Transport', description:'MTR',                    notes:'' },
+    ]
+  },
+  case3: {
+    name: 'Case 3: Subscription Creep Detection',
+    rules: [
+      { category:'Digital', threshold:150, period:'monthly', rule_type:'cap', enabled:true },
+    ],
+    transactions: [
+      { date:'2026-03-01', amount:63.0,  category:'Digital', description:'Netflix Standard',        notes:'recurring' },
+      { date:'2026-03-01', amount:38.5,  category:'Digital', description:'Spotify Premium',         notes:'recurring' },
+      { date:'2026-03-05', amount:198.0, category:'Digital', description:'Adobe Creative Cloud',    notes:'annual/12' },
+      { date:'2026-03-10', amount:12.0,  category:'Digital', description:'iCloud 50GB',             notes:'recurring' },
+      { date:'2026-03-15', amount:78.0,  category:'Digital', description:'YouTube Premium Family',  notes:'recurring' },
+      { date:'2026-04-01', amount:63.0,  category:'Digital', description:'Netflix Standard',        notes:'recurring' },
+      { date:'2026-04-01', amount:38.5,  category:'Digital', description:'Spotify Premium',         notes:'recurring' },
+      { date:'2026-04-05', amount:198.0, category:'Digital', description:'Adobe Creative Cloud',    notes:'annual/12' },
+      { date:'2026-04-10', amount:12.0,  category:'Digital', description:'iCloud 50GB',             notes:'recurring' },
+      { date:'2026-04-15', amount:78.0,  category:'Digital', description:'YouTube Premium Family',  notes:'recurring' },
+      { date:'2026-04-20', amount:45.0,  category:'Digital', description:'Canva Pro',               notes:'new subscription' },
+    ]
+  }
+};
+
+/* ════════════════════════════════════════════════════════════
+   UI HELPERS
+   ════════════════════════════════════════════════════════════ */
+let _toastTimer = null;
+function showToast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  const styles = {
+    success: 'rgba(6,30,20,0.92)|rgba(16,185,129,0.45)|#6ee7b7',
+    error:   'rgba(20,4,4,0.92)|rgba(239,68,68,0.45)|#fca5a5',
+    warn:    'rgba(20,12,2,0.92)|rgba(245,158,11,0.45)|#fcd34d',
+  };
+  const [bg, border, color] = (styles[type] || styles.success).split('|');
+  el.style.cssText += `;background:${bg};border:1px solid ${border};color:${color};opacity:1;transform:translateY(0)`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.style.opacity='0'; el.style.transform='translateY(-6px)'; }, 3000);
+}
+
+function catPill(cat) {
+  const c = CAT_COLORS[cat] || '#94a3b8';
+  return `<span class="cat-pill" style="background:${c}22;color:${c};border:1px solid ${c}44;">${cat}</span>`;
+}
+
+function fmtHKD(n) { return `HKD ${n.toLocaleString('en-HK',{minimumFractionDigits:2,maximumFractionDigits:2})}`; }
+
+/* ════════════════════════════════════════════════════════════
+   TAB NAVIGATION
+   ════════════════════════════════════════════════════════════ */
+function showTab(name) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  const section = document.getElementById(`tab-${name}`);
+  const navBtn  = document.getElementById(`nav-${name}`);
+  if (section) section.classList.remove('hidden');
+  if (navBtn)  navBtn.classList.add('active');
+
+  if (name === 'dashboard')    updateDashboard();
+  if (name === 'transactions') renderTransactions();
+  if (name === 'alerts')       checkAndRenderAlerts();
+  if (name === 'rules')        renderRules();
+}
+
+/* ════════════════════════════════════════════════════════════
+   DASHBOARD
+   ════════════════════════════════════════════════════════════ */
+let pieChart = null;
+
+function updateDashboard() {
+  const txs    = loadData();
+  const rules  = loadRules();
+  const alerts = checkAllAlerts(txs, rules);
+  const score  = healthScore(alerts, txs);
+  const total  = getTotalSpending(txs);
+  const count  = txs.length;
+  const avg    = count ? total / count : 0;
+  const catTotals  = getCategoryTotals(txs);
+  const topCats    = getTopCategories(txs, 1);
+  const topCat     = topCats.length ? topCats[0][0] : 'N/A';
+  const warnAlerts = alerts.filter(a => a.type !== 'info');
+
+  // Header badge
+  document.getElementById('tx-count-badge').textContent = `${count} transaction${count!==1?'s':''}`;
+
+  // Stat cells
+  document.getElementById('dash-total').textContent  = fmtHKD(total);
+  document.getElementById('dash-count').textContent  = count;
+  document.getElementById('dash-avg').textContent    = fmtHKD(avg);
+  document.getElementById('dash-top-cat').textContent = topCat;
+
+  const alertEl = document.getElementById('dash-alert-count');
+  alertEl.textContent   = warnAlerts.length;
+  alertEl.style.color   = warnAlerts.length > 0 ? '#f59e0b' : '#10b981';
+
+  const healthEl = document.getElementById('dash-health');
+  healthEl.textContent = scoreLabel(score);
+  healthEl.style.color = scoreColor(score);
+
+  document.getElementById('dash-density').textContent = `${((count/30)||0).toFixed(1)} tx/week`;
+
+  // Mini category bars
+  const barsEl = document.getElementById('cat-bars');
+  const entries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  if (entries.length === 0) {
+    barsEl.innerHTML = '<div class="text-xs" style="color:#1f3a2c;">No spending data yet</div>';
+  } else {
+    const maxAmt = entries[0][1];
+    barsEl.innerHTML = entries.map(([cat, amt]) => {
+      const pct = (amt / maxAmt * 100).toFixed(0);
+      const c   = CAT_COLORS[cat] || '#94a3b8';
+      return `<div class="flex items-center gap-1.5 text-xs">
+        <span class="w-16 text-right truncate" style="color:#4b7a5e;">${cat}</span>
+        <div class="flex-1 rounded-full overflow-hidden" style="background:rgba(16,185,129,0.08);height:6px;">
+          <div class="h-full rounded-full transition-all duration-700" style="width:${pct}%;background:${c};"></div>
+        </div>
+        <span class="w-16 text-right font-medium" style="color:${c};">$${amt.toFixed(0)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Pie chart
+  const ctx = document.getElementById('pie-chart').getContext('2d');
+  if (pieChart) { pieChart.destroy(); pieChart = null; }
+
+  const pieEntries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  if (pieEntries.length > 0) {
+    pieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: pieEntries.map(([c])=>c),
+        datasets: [{
+          data: pieEntries.map(([,v])=>v),
+          backgroundColor: pieEntries.map(([c])=>(CAT_COLORS[c]||'#94a3b8')+'bb'),
+          borderColor:     pieEntries.map(([c])=>(CAT_COLORS[c]||'#94a3b8')),
+          borderWidth: 1.5, hoverOffset: 8,
+        }]
+      },
+      options: {
+        cutout:'68%', responsive:false,
+        plugins:{
+          legend:{ display:false },
+          tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${fmtHKD(ctx.parsed)}` } }
+        },
+        animation:{ duration:900, easing:'easeInOutQuart' }
+      }
+    });
+    // Legend
+    document.getElementById('pie-legend').innerHTML = pieEntries.map(([cat,amt])=>{
+      const c   = CAT_COLORS[cat] || '#94a3b8';
+      const pct = total > 0 ? ((amt/total)*100).toFixed(1) : '0.0';
+      return `<div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${c};"></span>
+        <span class="truncate" style="color:#4b7a5e;">${cat}</span>
+        <span class="ml-auto font-medium" style="color:${c};">${pct}%</span>
+      </div>`;
+    }).join('');
+  } else {
+    ctx.clearRect(0,0,176,176);
+    document.getElementById('pie-legend').innerHTML =
+      '<div class="col-span-2 text-center" style="color:#1f3a2c;">No spending data</div>';
+  }
+
+  // Score in pie centre
+  const psc = document.getElementById('pie-score-num');
+  psc.textContent = score;
+  psc.style.color = scoreColor(score);
+
+  // Wealth tree
+  renderWealthTree(score);
+}
+
+/* ════════════════════════════════════════════════════════════
+   TRANSACTIONS VIEW
+   ════════════════════════════════════════════════════════════ */
+function renderTransactions() {
+  const txs         = loadData();
+  const filterCat   = document.getElementById('filter-cat')?.value || '';
+  const filterSearch= (document.getElementById('filter-search')?.value || '').toLowerCase();
+
+  let filtered = txs;
+  if (filterCat)    filtered = filtered.filter(t => t.category === filterCat);
+  if (filterSearch) filtered = filtered.filter(t =>
+    (t.description||'').toLowerCase().includes(filterSearch) ||
+    (t.date||'').includes(filterSearch) ||
+    (t.notes||'').toLowerCase().includes(filterSearch)
+  );
+
+  const tbody = document.getElementById('tx-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12" style="color:#1f3a2c;">${
+      txs.length === 0 ? 'No transactions yet. Add one!' : 'No transactions match the filter.'
+    }</td></tr>`;
+  } else {
+    tbody.innerHTML = filtered.map(t => {
+      const origIdx = txs.indexOf(t);
+      return `<tr class="transition-colors" style="border-bottom:1px solid rgba(16,185,129,0.07);"
+               onmouseenter="this.style.background='rgba(16,185,129,0.04)'"
+               onmouseleave="this.style.background=''">
+        <td class="py-2.5 pr-4 text-xs font-mono" style="color:#34d399;">${t.date||''}</td>
+        <td class="py-2.5 pr-4 font-semibold" style="color:#6ee7b7;">${fmtHKD(t.amount||0)}</td>
+        <td class="py-2.5 pr-4">${catPill(t.category||'Other')}</td>
+        <td class="py-2.5 pr-4 text-sm max-w-xs truncate" style="color:#cbd5e1;">${t.description||''}</td>
+        <td class="py-2.5 pr-4 text-xs max-w-24 truncate" style="color:#374151;">${t.notes||''}</td>
+        <td class="py-2.5">
+          <button onclick="deleteTransaction(${origIdx})" class="btn-danger">✕</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Summary row
+  const visTotal = filtered.reduce((s,t)=>s+t.amount,0);
+  document.getElementById('tx-summary-row').innerHTML = filtered.length > 0 ?
+    `<span>Showing ${filtered.length} of ${txs.length}</span>
+     <span>Filtered total: <strong style="color:#6ee7b7;">${fmtHKD(visTotal)}</strong></span>` : '';
+}
+
+function deleteTransaction(idx) {
+  if (!confirm('Delete this transaction?')) return;
+  const txs = loadData();
+  txs.splice(idx, 1);
+  saveData(txs);
+  renderTransactions();
+  updateDashboard();
+  showToast('Transaction deleted');
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADD TRANSACTION — GUIDED
+   ════════════════════════════════════════════════════════════ */
+function addTransactionGuided(e) {
+  e.preventDefault();
+  const date     = document.getElementById('g-date').value;
+  const amount   = parseFloat(document.getElementById('g-amount').value);
+  const category = document.getElementById('g-category').value;
+  const desc     = document.getElementById('g-desc').value.trim();
+  const notes    = document.getElementById('g-notes').value.trim();
+
+  if (!validateDate(date))     return showToast('Invalid date format (YYYY-MM-DD)', 'error');
+  if (!validateAmount(amount)) return showToast('Invalid amount (must be 0.01–100,000 HKD)', 'error');
+  if (!validateCategory(category)) return showToast('Invalid category', 'error');
+
+  const txs = loadData();
+  txs.push({ date, amount, category, description: desc || '', notes: notes || '' });
+  saveData(txs);
+
+  document.getElementById('g-desc').value   = '';
+  document.getElementById('g-notes').value  = '';
+  document.getElementById('g-amount').value = '';
+
+  showToast('✓ Transaction added successfully!');
+  updateDashboard();
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADD TRANSACTION — SMART INPUT
+   ════════════════════════════════════════════════════════════ */
+function parseSmartInput() {
+  const raw    = document.getElementById('smart-input').value;
+  const parsed = parseUnstructured(raw);
+  if (!parsed) { showToast('Could not parse text. Check the format tips.', 'error'); return; }
+
+  document.getElementById('sp-date').value     = parsed.date     || '';
+  document.getElementById('sp-amount').value   = parsed.amount   !== null ? parsed.amount : '';
+  document.getElementById('sp-category').value = parsed.category || 'Other';
+  document.getElementById('sp-desc').value     = parsed.description || '';
+  document.getElementById('smart-preview').classList.remove('hidden');
+}
+
+function confirmSmartInput() {
+  const date     = document.getElementById('sp-date').value;
+  const amount   = parseFloat(document.getElementById('sp-amount').value);
+  const category = document.getElementById('sp-category').value;
+  const desc     = document.getElementById('sp-desc').value.trim();
+
+  if (!validateDate(date))     return showToast('Invalid date — please fix it', 'error');
+  if (!validateAmount(amount)) return showToast('Invalid amount — please fix it', 'error');
+  if (!validateCategory(category)) return showToast('Invalid category', 'error');
+
+  const txs = loadData();
+  txs.push({ date, amount, category, description: desc || 'Quick entry', notes: '' });
+  saveData(txs);
+
+  document.getElementById('smart-input').value = '';
+  document.getElementById('smart-preview').classList.add('hidden');
+  showToast('✓ Transaction added from smart input!');
+  updateDashboard();
+}
+
+/* ════════════════════════════════════════════════════════════
+   ALERTS
+   ════════════════════════════════════════════════════════════ */
+function checkAndRenderAlerts() {
+  const txs    = loadData();
+  const rules  = loadRules();
+  const alerts = checkAllAlerts(txs, rules);
+  const score  = healthScore(alerts, txs);
+  const container = document.getElementById('alerts-container');
+
+  const warnAlerts = alerts.filter(a => a.type !== 'info');
+  const infoAlerts = alerts.filter(a => a.type === 'info');
+
+  if (alerts.length === 0 || (warnAlerts.length === 0 && infoAlerts.length === 0)) {
+    container.innerHTML = `<div class="text-center py-14">
+      <div class="text-5xl mb-3">✅</div>
+      <div class="font-semibold text-lg" style="color:#34d399;">Everything looks good!</div>
+      <div class="text-sm mt-1" style="color:#1f3a2c;">No alerts triggered.</div>
+    </div>`;
+    return;
+  }
+
+  const scoreHtml = `<div class="flex items-center gap-4 p-4 rounded-xl mb-4" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);">
+    <div class="text-3xl font-black" style="color:${scoreColor(score)};">${score}</div>
+    <div>
+      <div class="text-xs" style="color:#4b7a5e;">Health Score</div>
+      <div class="font-semibold text-sm" style="color:${scoreColor(score)};">${scoreLabel(score)}</div>
+    </div>
+    <div class="ml-auto text-right">
+      <div class="text-xs" style="color:#4b7a5e;">Alerts</div>
+      <div class="font-bold" style="color:${warnAlerts.length>0?'#f59e0b':'#10b981'};">${warnAlerts.length} warning${warnAlerts.length!==1?'s':''}</div>
+    </div>
+  </div>`;
+
+  const alertsHtml = alerts.map(a => {
+    const colors = { cap:'#ef4444', budget:'#f59e0b', info:'#60a5fa' };
+    const icons  = { cap:'🚫', budget:'⚠️', info:'ℹ️' };
+    return `<div class="rounded-xl px-4 py-3 alert-${a.type}">
+      <div class="flex gap-2">
+        <span>${icons[a.type]||'•'}</span>
+        <span class="text-sm" style="color:${colors[a.type]||'#94a3b8'};">${a.msg}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `${scoreHtml}<div class="space-y-2">${alertsHtml}</div>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUDGET RULES
+   ════════════════════════════════════════════════════════════ */
+function renderRules() {
+  const rules = loadRules();
+  const el    = document.getElementById('rules-list');
+  if (rules.length === 0) {
+    el.innerHTML = '<div class="text-center py-8" style="color:#1f3a2c;">No rules configured.</div>';
+    return;
+  }
+  el.innerHTML = rules.map((r, i) => {
+    const thresh = r.rule_type === 'percentage'
+      ? `${(r.threshold*100).toFixed(0)}% of total`
+      : `HKD ${r.threshold}`;
+    const icons  = { cap:'🚫', percentage:'📊' };
+    return `<div class="flex items-center justify-between rounded-xl px-4 py-3 transition-colors"
+             style="background:${r.enabled?'rgba(16,185,129,0.05)':'rgba(255,255,255,0.02)'};border:1px solid rgba(16,185,129,${r.enabled?'0.12':'0.04'});">
+      <div class="flex items-center gap-2 flex-wrap flex-1">
+        ${catPill(r.category)}
+        <span class="text-xs" style="color:#4b7a5e;">${icons[r.rule_type]||''} ${thresh}</span>
+        <span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(16,185,129,0.07);color:#1f3a2c;">${r.period}</span>
+      </div>
+      <div class="flex items-center gap-2 ml-3">
+        <button onclick="toggleRule(${i})"
+                class="text-xs font-medium transition-colors"
+                style="color:${r.enabled?'#10b981':'#374151'};">
+          ${r.enabled ? '✓ On' : '○ Off'}
+        </button>
+        <button onclick="deleteRule(${i})" class="btn-danger">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addRule(e) {
+  e.preventDefault();
+  const category  = document.getElementById('r-category').value;
+  const ruleType  = document.getElementById('r-type').value;
+  let threshold   = parseFloat(document.getElementById('r-threshold').value);
+  const period    = document.getElementById('r-period').value;
+
+  if (isNaN(threshold) || threshold <= 0) return showToast('Invalid threshold value', 'error');
+  if (ruleType === 'percentage') {
+    if (threshold > 100) return showToast('Percentage threshold must be ≤ 100', 'error');
+    threshold = threshold / 100;  // store as 0.0–1.0, matching budget_model.py
+  }
+
+  const rules = loadRules();
+  rules.push({ category, threshold, period, rule_type: ruleType, enabled: true });
+  saveRules(rules);
+  renderRules();
+  document.getElementById('r-threshold').value = '';
+  showToast('✓ Budget rule added!');
+}
+
+function toggleRule(idx) {
+  const rules = loadRules();
+  rules[idx].enabled = !rules[idx].enabled;
+  saveRules(rules);
+  renderRules();
+}
+
+function deleteRule(idx) {
+  if (!confirm('Delete this rule?')) return;
+  const rules = loadRules();
+  rules.splice(idx, 1);
+  saveRules(rules);
+  renderRules();
+  showToast('Rule deleted');
+}
+
+function updateRuleHint() {
+  const type = document.getElementById('r-type').value;
+  document.getElementById('r-threshold-hint').textContent =
+    type === 'percentage' ? '(% of total, e.g. 30 means 30%)' : '(HKD fixed amount, e.g. 150)';
+}
+
+function loadPresetRules(preset) {
+  const balanced = [
+    { category:'Dining',    threshold:0.30, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Housing',   threshold:0.40, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Transport', threshold:0.15, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Digital',   threshold:150,  period:'monthly', rule_type:'cap',        enabled:true },
+    { category:'Social',    threshold:0.10, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Academic',  threshold:0.10, period:'monthly', rule_type:'percentage', enabled:true },
+  ];
+  const saving = [
+    { category:'Dining',    threshold:0.20, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Social',    threshold:0.05, period:'monthly', rule_type:'percentage', enabled:true },
+    { category:'Digital',   threshold:100,  period:'monthly', rule_type:'cap',        enabled:true },
+    { category:'Transport', threshold:75,   period:'weekly',  rule_type:'cap',        enabled:true },
+  ];
+  saveRules(preset === 'balanced' ? balanced : saving);
+  renderRules();
+  showToast(`✓ Loaded "${preset}" preset rules`);
+}
+
+/* ════════════════════════════════════════════════════════════
+   REPORT  (mirrors generate_report() in main.py)
+   ════════════════════════════════════════════════════════════ */
+function generateReport() {
+  const txs    = loadData();
+  const rules  = loadRules();
+  const alerts = checkAllAlerts(txs, rules);
+  const score  = healthScore(alerts, txs);
+  const total  = getTotalSpending(txs);
+  const topCats = getTopCategories(txs, 3);
+  const now = new Date().toISOString().replace('T',' ').substring(0,19);
+
+  let suggestion;
+  if (score >= 80)      suggestion = '- Good control. Keep current habits and automate weekly tracking.';
+  else if (score >= 50) suggestion = '- Moderate risk. Reduce top category by 10% next week.';
+  else if (score >= 20) suggestion = '- High risk. Set a hard cap for your top category today.';
+  else                  suggestion = '- Critical. Pause non-essential spending and review all alerts.';
+
+  const divider = '─'.repeat(42);
+  const lines = [
+    'FinanceBIO Report',
+    divider,
+    `Generated at: ${now}`,
+    `Transactions:  ${txs.length}`,
+    `Total Spending: ${fmtHKD(total)}`,
+    `Health Score:  ${score}/100`,
+    `Alert Count:   ${alerts.filter(a=>a.type!=='info').length}`,
+    '',
+    'Top Categories:',
+    ...(topCats.length
+      ? topCats.map(([cat,amt])=>`  - ${cat}: ${fmtHKD(amt)}`)
+      : ['  - No data']),
+    '',
+    'Suggestion:',
+    suggestion,
+    '',
+    divider,
+    'All Alerts:',
+    ...(alerts.length
+      ? alerts.map(a=>`  [${a.type.toUpperCase()}] ${a.msg}`)
+      : ['  No alerts.']),
+  ];
+
+  document.getElementById('report-content').textContent = lines.join('\n');
+}
+
+/* ════════════════════════════════════════════════════════════
+   CASE STUDIES  (mirrors CLI menu option 5: Load Data)
+   ════════════════════════════════════════════════════════════ */
+function loadCaseStudy(id) {
+  const cs = CASE_STUDIES[id];
+  if (!cs) return;
+  saveData(cs.transactions);
+  saveRules(cs.rules);
+  updateDashboard();
+  showToast(`✓ Loaded ${cs.name} (${cs.transactions.length} transactions)`);
+}
+
+/* ════════════════════════════════════════════════════════════
+   CLEAR ALL DATA
+   ════════════════════════════════════════════════════════════ */
+function clearAllData() {
+  if (!confirm('Clear all transactions and reset budget rules to defaults?')) return;
+  localStorage.removeItem('fb_transactions');
+  localStorage.removeItem('fb_rules');
+  updateDashboard();
+  renderTransactions();
+  renderRules();
+  showToast('All data cleared and rules reset');
+}
+
+/* ════════════════════════════════════════════════════════════
+   INITIALISATION
+   ════════════════════════════════════════════════════════════ */
+(function init() {
+  // Populate all category <select> elements
+  const catOptsFull   = CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const catOptsFilter = `<option value="">All Categories</option>${catOptsFull}`;
+
+  document.getElementById('g-category').innerHTML  = catOptsFull;
+  document.getElementById('r-category').innerHTML  = catOptsFull;
+  document.getElementById('sp-category').innerHTML = catOptsFull;
+  const fc = document.getElementById('filter-cat');
+  if (fc) fc.innerHTML = catOptsFilter;
+
+  // Set today as default date
+  const today = new Date().toISOString().split('T')[0];
+  const dateEl = document.getElementById('g-date');
+  if (dateEl) dateEl.value = today;
+
+  // Initial render
+  updateDashboard();
+})();
+</script>
+</body>
+</html>
