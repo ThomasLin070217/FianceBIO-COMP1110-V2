@@ -1,0 +1,12 @@
+FinanceBIO Report
+Generated at: 2026-04-21 23:17:22
+Transactions: 2
+Total Spending: HKD 200.00
+Health Score: 100/100
+Alert Count: 0
+
+Top Categories:
+- Dining: HKD 200.00
+
+Suggestion:
+- Good control. Keep current habits and automate weekly tracking.

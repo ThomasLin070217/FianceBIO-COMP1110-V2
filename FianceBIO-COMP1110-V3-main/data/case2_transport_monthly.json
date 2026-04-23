@@ -1,0 +1,14 @@
+/* CASE 2 TRANSACTION DATA:
+   - Monthly campus commuting and occasional taxi trips.
+   - Designed to test transport-heavy spending profile.
+*/
+[
+    {"date": "2026-04-01", "amount": 18.0, "category": "Transport", "description": "MTR to campus"},
+    {"date": "2026-04-02", "amount": 18.0, "category": "Transport", "description": "MTR return"},
+    {"date": "2026-04-03", "amount": 24.0, "category": "Transport", "description": "Bus + MTR"},
+    {"date": "2026-04-05", "amount": 120.0, "category": "Transport", "description": "Late-night taxi"},
+    {"date": "2026-04-09", "amount": 16.5, "category": "Transport", "description": "Bus to internship"},
+    {"date": "2026-04-12", "amount": 16.5, "category": "Transport", "description": "Bus return"},
+    {"date": "2026-04-18", "amount": 22.0, "category": "Transport", "description": "Airport bus"},
+    {"date": "2026-04-21", "amount": 15.0, "category": "Food", "description": "Campus lunch"}
+]
