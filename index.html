@@ -420,7 +420,20 @@
             <input type="text" id="g-notes" placeholder="e.g. overpriced"
                    class="w-full rounded-xl px-3 py-2.5 text-sm">
           </div>
+<<<<<<< HEAD
           <button type="submit" class="btn-primary w-full py-2.5">➕ Add Transaction</button>
+=======
+          <div class="space-y-2">
+            <button type="submit" class="btn-primary w-full py-2.5">➕ Add Transaction</button>
+            <label class="btn-secondary w-full py-2.5 text-center block cursor-pointer">
+              📄 Import CSV Transactions
+              <input type="file" id="csv-upload" accept=".csv,text/csv" class="hidden" onchange="handleCsvUpload(event)">
+            </label>
+            <div class="text-[11px] leading-relaxed" style="color:#4b7a5e;">
+              Expected columns: <span class="text-emerald-500">Date</span>, <span class="text-emerald-500">Amount</span>, <span class="text-emerald-500">category</span>, <span class="text-emerald-500">Description</span>, <span class="text-emerald-500">Notes (optional)</span>
+            </div>
+          </div>
+>>>>>>> 1fd3651 (upload project files)
         </form>
       </div>
 
@@ -1149,8 +1162,16 @@ function renderTransactions() {
         <td class="py-2.5 pr-4">${catPill(t.category||'Other')}</td>
         <td class="py-2.5 pr-4 text-sm max-w-xs truncate" style="color:#cbd5e1;">${t.description||''}</td>
         <td class="py-2.5 pr-4 text-xs max-w-24 truncate" style="color:#374151;">${t.notes||''}</td>
+<<<<<<< HEAD
         <td class="py-2.5">
           <button onclick="deleteTransaction(${origIdx})" class="btn-danger">✕</button>
+=======
+        <td class="py-2.5 text-right">
+          <div class="inline-flex items-center gap-2">
+            <button onclick="openEditTransactionWindow(${origIdx})" class="btn-secondary text-xs px-3 py-1">Edit</button>
+            <button onclick="deleteTransaction(${origIdx})" class="btn-danger">✕</button>
+          </div>
+>>>>>>> 1fd3651 (upload project files)
         </td>
       </tr>`;
     }).join('');
@@ -1173,6 +1194,95 @@ function deleteTransaction(idx) {
   showToast('Transaction deleted');
 }
 
+<<<<<<< HEAD
+=======
+function openEditTransactionWindow(idx) {
+  const txs = loadData();
+  const tx = txs[idx];
+  if (!tx) return showToast('Transaction not found', 'error');
+
+  const popup = window.open('', '_blank', 'width=520,height=700,resizable=yes,scrollbars=yes');
+  if (!popup) {
+    showToast('Popup blocked. Please allow popups for editing.', 'error');
+    return;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Transaction</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #07130d; color: #d1fae5; }
+    .card { max-width: 460px; margin: 0 auto; padding: 20px; border-radius: 18px; background: #0b1f16; border: 1px solid rgba(16,185,129,0.2); }
+    label { display:block; margin: 12px 0 6px; font-size: 12px; color: #6ee7b7; }
+    input, select, textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(16,185,129,0.25); background: rgba(255,255,255,0.04); color: #d1fae5; }
+    button { margin-top: 14px; width: 100%; padding: 12px; border: 0; border-radius: 12px; cursor: pointer; font-weight: 700; }
+    .save { background: linear-gradient(135deg, #059669, #047857); color: white; }
+    .cancel { background: rgba(255,255,255,0.06); color: #6ee7b7; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { margin: 0 0 16px; color: #86efac; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Edit Transaction</h1>
+    <p>Update the transaction details and save your changes.</p>
+    <form id="edit-form">
+      <label for="date">Date</label>
+      <input type="date" id="date" value="${tx.date || ''}" required>
+      <div class="row">
+        <div>
+          <label for="amount">Amount (HKD)</label>
+          <input type="number" id="amount" min="0.01" max="100000" step="0.01" value="${tx.amount ?? ''}" required>
+        </div>
+        <div>
+          <label for="category">Category</label>
+          <select id="category">${CATEGORIES.map(c => `<option value="${c}" ${c === tx.category ? 'selected' : ''}>${c}</option>`).join('')}</select>
+        </div>
+      </div>
+      <label for="description">Description</label>
+      <input type="text" id="description" value="${(tx.description || '').replace(/"/g, '&quot;')}">
+      <label for="notes">Notes</label>
+      <textarea id="notes" rows="4">${(tx.notes || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+      <button type="submit" class="save">Save Changes</button>
+      <button type="button" class="cancel" onclick="window.close()">Cancel</button>
+    </form>
+  </div>
+  <script>
+    const txIndex = ${idx};
+    document.getElementById('edit-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const date = document.getElementById('date').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const description = document.getElementById('description').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+      if (!date || isNaN(new Date(date))) return alert('Invalid date');
+      if (isNaN(amount) || amount <= 0) return alert('Invalid amount');
+      const txs = JSON.parse(localStorage.getItem('fb_transactions') || '[]');
+      if (!txs[txIndex]) return alert('Transaction not found');
+      txs[txIndex] = { ...txs[txIndex], date, amount, category, description, notes };
+      localStorage.setItem('fb_transactions', JSON.stringify(txs));
+      if (window.opener && !window.opener.closed) {
+        window.opener.dispatchEvent(new Event('storage'));
+        if (typeof window.opener.updateDashboard === 'function') window.opener.updateDashboard();
+        if (typeof window.opener.renderTransactions === 'function') window.opener.renderTransactions();
+      }
+      window.close();
+    });
+  <\/script>
+</body>
+</html>`;
+
+  popup.document.open();
+  popup.document.write(html);
+  popup.document.close();
+}
+
+>>>>>>> 1fd3651 (upload project files)
 /* ════════════════════════════════════════════════════════════
    ADD TRANSACTION — GUIDED
    ════════════════════════════════════════════════════════════ */
@@ -1236,6 +1346,130 @@ function confirmSmartInput() {
 }
 
 /* ════════════════════════════════════════════════════════════
+<<<<<<< HEAD
+=======
+   ADD TRANSACTION — CSV IMPORT
+   ════════════════════════════════════════════════════════════ */
+function parseCsvLine(line) {
+  const cells = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function normalizeCsvDate(value) {
+  const cleaned = (value || '').trim().replace(/[./]/g, '-');
+  const match = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!match) return null;
+  return `${match[1]}-${String(parseInt(match[2], 10)).padStart(2, '0')}-${String(parseInt(match[3], 10)).padStart(2, '0')}`;
+}
+
+function handleCsvUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = String(reader.result || '').trim();
+      if (!text) {
+        showToast('CSV file is empty', 'error');
+        return;
+      }
+
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
+      if (lines.length < 2) {
+        showToast('CSV must include a header row and at least one record', 'error');
+        return;
+      }
+
+      const header = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+      const dateIdx = header.findIndex(h => h === 'date' || h.includes('date'));
+      const amountIdx = header.findIndex(h => h === 'amount' || h.includes('amount'));
+      const categoryIdx = header.findIndex(h => h === 'category');
+      const descIdx = header.findIndex(h => h === 'description');
+      const notesIdx = header.findIndex(h => h.includes('notes'));
+
+      if (dateIdx === -1 || amountIdx === -1 || categoryIdx === -1 || descIdx === -1) {
+        showToast('CSV header must include Date, Amount, category, and Description', 'error');
+        return;
+      }
+
+      const txs = loadData();
+      let added = 0;
+      const errors = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCsvLine(lines[i]);
+        const date = normalizeCsvDate(row[dateIdx]);
+        const amount = parseFloat((row[amountIdx] || '').replace(/[^\d.-]/g, ''));
+        const category = (row[categoryIdx] || '').trim();
+        const description = (row[descIdx] || '').trim();
+        const notes = notesIdx >= 0 ? (row[notesIdx] || '').trim() : '';
+
+        if (!validateDate(date || '')) {
+          errors.push(`Row ${i + 1}: invalid date`);
+          continue;
+        }
+        if (!validateAmount(amount)) {
+          errors.push(`Row ${i + 1}: invalid amount`);
+          continue;
+        }
+        if (!validateCategory(category)) {
+          errors.push(`Row ${i + 1}: invalid category`);
+          continue;
+        }
+        if (!description) {
+          errors.push(`Row ${i + 1}: missing description`);
+          continue;
+        }
+
+        txs.push({ date, amount, category, description, notes });
+        added++;
+      }
+
+      if (added > 0) {
+        saveData(txs);
+        updateDashboard();
+        renderTransactions();
+      }
+
+      const summary = errors.length === 0
+        ? `Imported ${added} transaction${added !== 1 ? 's' : ''}`
+        : `Imported ${added} transaction${added !== 1 ? 's' : ''}; ${errors.length} row${errors.length !== 1 ? 's' : ''} skipped`;
+      showToast(summary, errors.length ? 'warn' : 'success');
+      if (errors.length) console.warn('CSV import issues:', errors);
+    } catch (err) {
+      showToast('Failed to read CSV file', 'error');
+      console.error(err);
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+/* ════════════════════════════════════════════════════════════
+>>>>>>> 1fd3651 (upload project files)
    ALERTS
    ════════════════════════════════════════════════════════════ */
 function checkAndRenderAlerts() {
