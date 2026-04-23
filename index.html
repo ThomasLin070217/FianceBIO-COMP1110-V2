@@ -1158,22 +1158,11 @@ function renderTransactions() {
         <td class="py-2.5 pr-4">${catPill(t.category||'Other')}</td>
         <td class="py-2.5 pr-4 text-sm max-w-xs truncate" style="color:#cbd5e1;">${t.description||''}</td>
         <td class="py-2.5 pr-4 text-xs max-w-24 truncate" style="color:#374151;">${t.notes||''}</td>
-<<<<<<< HEAD
-<<<<<<< HEAD
-        <td class="py-2.5">
-          <button onclick="deleteTransaction(${origIdx})" class="btn-danger">✕</button>
-=======
-=======
->>>>>>> 470c625 (Upload project files to main)
         <td class="py-2.5 text-right">
           <div class="inline-flex items-center gap-2">
             <button onclick="openEditTransactionWindow(${origIdx})" class="btn-secondary text-xs px-3 py-1">Edit</button>
             <button onclick="deleteTransaction(${origIdx})" class="btn-danger">✕</button>
           </div>
-<<<<<<< HEAD
->>>>>>> 1fd3651 (upload project files)
-=======
->>>>>>> 470c625 (Upload project files to main)
         </td>
       </tr>`;
     }).join('');
@@ -1196,11 +1185,6 @@ function deleteTransaction(idx) {
   showToast('Transaction deleted');
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 470c625 (Upload project files to main)
 function openEditTransactionWindow(idx) {
   const txs = loadData();
   const tx = txs[idx];
@@ -1287,10 +1271,6 @@ function openEditTransactionWindow(idx) {
   popup.document.close();
 }
 
-<<<<<<< HEAD
->>>>>>> 1fd3651 (upload project files)
-=======
->>>>>>> 470c625 (Upload project files to main)
 /* ════════════════════════════════════════════════════════════
    ADD TRANSACTION — GUIDED
    ════════════════════════════════════════════════════════════ */
@@ -1354,11 +1334,6 @@ function confirmSmartInput() {
 }
 
 /* ════════════════════════════════════════════════════════════
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 470c625 (Upload project files to main)
    ADD TRANSACTION — CSV IMPORT
    ════════════════════════════════════════════════════════════ */
 function parseCsvLine(line) {
@@ -1480,10 +1455,6 @@ function handleCsvUpload(event) {
 }
 
 /* ════════════════════════════════════════════════════════════
-<<<<<<< HEAD
->>>>>>> 1fd3651 (upload project files)
-=======
->>>>>>> 470c625 (Upload project files to main)
    ALERTS
    ════════════════════════════════════════════════════════════ */
 function checkAndRenderAlerts() {
